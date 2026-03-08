@@ -1,8 +1,8 @@
 /**
- * NeuroVis — VERSIÓN TURBO (Optimización de Velocidad)
- * - Muestreo optimizado: analizando cada 500ms (2 FPS).
- * - Calidad de detección equilibrada para mayor velocidad.
- * - Sin cambios en estética ni funciones.
+ * NeuroVis — VERSIÓN FLUIDA (Análisis en Tiempo Real)
+ * - El video se reproduce a velocidad normal (1x).
+ * - El análisis ocurre mientras el video avanza, de forma fluida.
+ * - La duración del análisis coincide con la duración del video.
  */
 
 class VideoManager {
@@ -71,40 +71,52 @@ class FaceAnalyzer {
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
       await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
       this.modelsLoaded = true;
-    } catch (e) {
-      console.error('Error cargando modelos:', e);
-      throw new Error("No se pudieron cargar los modelos de IA.");
-    }
+    } catch (e) { throw new Error("No se pudieron cargar los modelos de IA."); }
   }
-  async analyzeVideo(video, duration, intervalMs = 500, onProgress = null, onFrameResult = null) {
+
+  async analyzeVideoLive(video, duration, onProgress = null, onFrameResult = null) {
     if (!this.modelsLoaded) await this.loadModels();
     this.isAnalyzing = true;
-    const results = [];
+    
+    // Configuramos el video para reproducirse fluido
+    video.currentTime = 0;
+    video.playbackRate = 1.0; 
+    await video.play();
+
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
-    const intervalSec = intervalMs / 1000;
-    const totalFrames = Math.ceil(duration / intervalSec);
-    // Optimización de detector: inputSize menor = más rápido
     const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 });
 
-    for (let t = 0; t <= duration; t += intervalSec) {
-      if (!this.isAnalyzing) break;
-      await new Promise(r => {
-        const seeked = () => { video.removeEventListener('seeked', seeked); requestAnimationFrame(r); };
-        video.addEventListener('seeked', seeked, { once: true });
-        video.currentTime = t;
-      });
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const detection = await faceapi.detectSingleFace(canvas, options).withFaceExpressions();
-      const res = { timestamp: t, expressions: detection ? detection.expressions : null, faceDetected: !!detection };
-      results.push(res);
-      if (onProgress) onProgress(results.length / totalFrames, t);
-      if (onFrameResult) onFrameResult(res, results.length, totalFrames);
-    }
-    this.isAnalyzing = false;
-    return results;
+    return new Promise((resolve) => {
+      const processFrame = async () => {
+        if (!this.isAnalyzing || video.ended || video.paused) {
+          this.isAnalyzing = false;
+          resolve();
+          return;
+        }
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const detection = await faceapi.detectSingleFace(canvas, options).withFaceExpressions();
+        
+        const res = { 
+          timestamp: video.currentTime, 
+          expressions: detection ? detection.expressions : null, 
+          faceDetected: !!detection 
+        };
+
+        if (onProgress) onProgress(video.currentTime / duration, video.currentTime);
+        if (onFrameResult) onFrameResult(res);
+
+        // Analizamos cada frame que el procesador permita sin bloquear el video
+        requestAnimationFrame(processFrame);
+      };
+      
+      processFrame();
+    });
   }
+
+  cancel() { this.isAnalyzing = false; }
 }
 
 class MetricsEngine {
@@ -145,7 +157,8 @@ class TimelineChart {
     });
   }
   update(metrics) {
-    this.chart.data.labels = metrics.map(m => m.timestamp);
+    // Para fluido, limitamos la cantidad de puntos en pantalla si es muy largo
+    this.chart.data.labels = metrics.map(m => m.timestamp.toFixed(1));
     this.chart.data.datasets[0].data = metrics.map(m => m.engagement);
     this.chart.data.datasets[1].data = metrics.map(m => m.valence);
     this.chart.data.datasets[2].data = metrics.map(m => m.arousal);
@@ -173,22 +186,30 @@ class NeuroVisApp {
     const bar = document.getElementById('analysis-bar');
     const status = document.getElementById('analysis-status');
     const prog = document.getElementById('analysis-progress');
-    btn.disabled = true; prog.classList.remove('hidden'); status.textContent = 'Iniciando Turbo...';
+    btn.disabled = true; prog.classList.remove('hidden'); status.textContent = 'Iniciando Análisis Fluido...';
     this.engine.reset();
     try {
-      // FRECUENCIA DE ANÁLISIS MEJORADA: cada 500ms (Más rápido y suficiente para Neuromarketing)
-      await this.ia.analyzeVideo(this.video.video, this.video.duration, 500, (p) => {
+      // El análisis dura lo que dura el video y se ve en tiempo real
+      await this.ia.analyzeVideoLive(this.video.video, this.video.duration, (p) => {
         bar.style.width = `${p * 100}%`;
-        status.textContent = `Analizando... ${Math.round(p * 100)}%`;
+        status.textContent = `Analizando en vivo... ${Math.round(p * 100)}%`;
       }, (res) => {
-        this.engine.processFrame(res);
+        const point = this.engine.processFrame(res);
         this.chart.update(this.engine.metrics);
-        this._updateUI(this.engine.averages);
+        // Pasamos el punto actual (point) para que las barras suban y bajen en vivo
+        this._updateUI(point); 
       });
       status.textContent = '¡Análisis Completo!';
       btn.innerHTML = 'Completo ✓';
       document.getElementById('btn-export').disabled = false;
-    } catch (e) { status.textContent = 'Error: ' + e.message; btn.disabled = false; btn.innerHTML = 'Reintentar Análisis'; }
+      
+      // AL TERMINAR: Mostramos los promedios finales en el tablero
+      // para que coincidan con lo que se exportará en el PDF.
+      this._updateUI(this.engine.averages); 
+
+      this.video.pause();
+      this.video.video.currentTime = 0;
+    } catch (e) { status.textContent = 'Error: ' + e.message; btn.disabled = false; }
   }
   _updateUI(avg) {
     const emojis = { happy: '😊', sad: '😢', angry: '😠', surprised: '😲', fearful: '😨', disgusted: '🤢', neutral: '😐' };
@@ -203,15 +224,111 @@ class NeuroVisApp {
     document.getElementById('val-dominant').textContent = `${emojis[dom]} ${labels[dom]}`;
   }
   async export() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFontSize(22); doc.text('NeuroVis - Resultado del Análisis', 20, 30);
-    doc.setFontSize(12);
-    doc.text(`Engagement: ${document.getElementById('val-engagement').textContent}`, 20, 50);
-    doc.text(`Valence: ${document.getElementById('val-valence').textContent}`, 20, 60);
-    doc.text(`Arousal: ${document.getElementById('val-arousal').textContent}`, 20, 70);
-    doc.text(`Emoción Dominante: ${document.getElementById('val-dominant').textContent}`, 20, 80);
-    doc.save('Análisis_NeuroVis.pdf');
+    const btn = document.getElementById('btn-export');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'Generando PDF...';
+    btn.disabled = true;
+
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      let y = 25;
+
+      // 1. Encabezado Premium
+      doc.setFillColor(10, 14, 26); doc.rect(0, 0, pageWidth, 40, 'F');
+      doc.setTextColor(0, 212, 255); doc.setFontSize(24); doc.setFont('helvetica', 'bold');
+      doc.text('NeuroVis — Informe Neuromarketing', margin, 25);
+      
+      // Fecha
+      doc.setTextColor(139, 146, 168); doc.setFontSize(10);
+      doc.text(`Fecha: ${new Date().toLocaleDateString()}`, pageWidth - margin - 40, 25);
+      
+      y = 55;
+      
+      // 2. Métricas Promedio
+      doc.setTextColor(0, 0, 0); doc.setFontSize(16); doc.text('Resultados del Análisis Biométrico', margin, y);
+      y += 12;
+      
+      const avg = this.engine.averages;
+      doc.setDrawColor(200, 200, 200); doc.setFillColor(245, 247, 250);
+      doc.roundedRect(margin, y, pageWidth - (margin * 2), 35, 3, 3, 'FD');
+      
+      let bx = margin + 10;
+      doc.setFontSize(10); doc.setTextColor(80, 80, 80);
+      doc.text('Engagement', bx, y + 10); doc.text('Valence', bx + 60, y + 10); doc.text('Arousal', bx + 120, y + 10);
+      
+      doc.setFontSize(15); doc.setTextColor(10, 10, 10);
+      doc.text(`${(avg.engagement * 100).toFixed(1)}%`, bx, y + 20);
+      doc.text(`${(avg.valence * 100).toFixed(1)}%`, bx + 60, y + 20);
+      doc.text(`${(avg.arousal * 100).toFixed(1)}%`, bx + 120, y + 20);
+      
+      const labels = { happy: 'Feliz', sad: 'Triste', angry: 'Enojado', surprised: 'Sorpresa', fearful: 'Miedo', disgusted: 'Disgusto', neutral: 'Neutral' };
+      doc.setFontSize(11); doc.text(`Emoción Dominante: ${labels[avg.dominant] || 'Neutral'}`, bx, y + 28);
+      
+      y += 50;
+
+      // 3. Capturas de Pantalla (Evidencia Visual)
+      doc.setFontSize(15); doc.text('Evidencia Visual', margin, y);
+      y += 8;
+      
+      const vCap = await this._capture();
+      const cCap = this._captureChart();
+      const imgW = (pageWidth - (margin * 2)) / 2 - 5;
+      const imgH = (imgW * 9) / 16;
+      
+      if (vCap) doc.addImage(vCap, 'PNG', margin, y, imgW, imgH);
+      if (cCap) doc.addImage(cCap, 'PNG', margin + imgW + 10, y, imgW, imgH);
+      
+      y += imgH + 20;
+
+      // 4. Implicaciones de Venta
+      doc.setFontSize(16); doc.setTextColor(0, 0, 0); doc.text('Implicaciones para el Producto', margin, y);
+      y += 10;
+      doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+      
+      const implications = this._calculateImplications(avg);
+      const splitText = doc.splitTextToSize(implications, pageWidth - (margin * 2));
+      doc.text(splitText, margin, y);
+
+      doc.save(`NeuroVis_Report_${new Date().getTime()}.pdf`);
+    } catch (e) {
+      console.error(e);
+      alert('Error al generar el PDF: ' + e.message);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  _calculateImplications(avg) {
+    let m = "";
+    if (avg.engagement > 0.6) m += "• ALTO COMPROMISO: El usuario está cautivado por el estímulo visual. Es el momento perfecto para mostrar el logo o el botón de compra.\n\n";
+    else m += "• ATENCIÓN BAJA: El contenido actual no engancha. Se recomienda usar más contraste o un inicio más impactante.\n\n";
+    
+    if (avg.valence > 0.1) m += "• VALENCIA POSITIVA: El producto genera agrado. La predisposición a la compra es alta porque se asocia con algo placentero.\n\n";
+    else if (avg.valence < -0.1) m += "• VALENCIA NEGATIVA: Hay rechazo. El video podría estar comunicando un mensaje que asusta o genera desconfianza.\n\n";
+    else m += "• NEUTRALIDAD: El usuario no siente nada especial. El video es informativo pero no 'enamora'.\n\n";
+    
+    if (avg.arousal > 0.5) m += "• ALTA ENERGÍA: El sujeto está alerta. Combinado con felicidad, es el estado ideal para cerrar una venta emocional.\n\n";
+    
+    m += "CONCLUSIÓN ESTRATÉGICA: ";
+    if (avg.valence > 0 && avg.engagement > 0.5) return m + "El contenido está optimizado para la conversión directa.";
+    return m + "Se recomienda ajustar el gancho emocional para mejorar el retorno de inversión.";
+  }
+
+  async _capture() {
+    const v = document.getElementById('video-player');
+    const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v, 0, 0); return c.toDataURL('image/png');
+  }
+
+  _captureChart() {
+    const c = document.getElementById('timeline-chart');
+    const tc = document.createElement('canvas'); tc.width = c.width; tc.height = c.height;
+    const tctx = tc.getContext('2d'); tctx.fillStyle = '#ffffff'; tctx.fillRect(0, 0, tc.width, tc.height);
+    tctx.drawImage(c, 0, 0); return tc.toDataURL('image/png');
   }
 }
 window.addEventListener('DOMContentLoaded', () => new NeuroVisApp());
