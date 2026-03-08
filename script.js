@@ -1,6 +1,7 @@
 /**
- * NeuroVis — Solución Definitiva de Rutas para GitHub Pages
- * Este archivo detecta automáticamente si estás en un subdirectorio o en la raíz.
+ * NeuroVis — VERSIÓN ULTRA-COMPATIBLE (MODELOS REMOTOS)
+ * Esta versión utiliza los modelos oficiales alojados en CDN para evitar
+ * problemas de carga en la estructura de archivos de GitHub.
  */
 
 class VideoManager {
@@ -23,7 +24,6 @@ class VideoManager {
     this.isLoaded = false;
     this._initEvents();
   }
-
   _initEvents() {
     this.fileInput.addEventListener('change', (e) => { if (e.target.files.length) this._loadFile(e.target.files[0]); });
     this.uploadCard.addEventListener('dragover', (e) => { e.preventDefault(); this.uploadCard.classList.add('drag-over'); });
@@ -46,7 +46,6 @@ class VideoManager {
       this.isLoaded = true;
     });
   }
-
   _loadFile(file) {
     this.video.src = URL.createObjectURL(file);
     this.filenameEl.textContent = file.name;
@@ -54,46 +53,39 @@ class VideoManager {
     this.uploadSection.classList.add('hidden');
     this.workspace.classList.remove('hidden');
   }
-
   togglePlay() {
     if (this.video.paused) { this.video.play(); this.iconPlay.classList.add('hidden'); this.iconPause.classList.remove('hidden'); } 
     else { this.video.pause(); this.iconPlay.classList.remove('hidden'); this.iconPause.classList.add('hidden'); }
   }
-
   _formatTime(s) { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return `${m}:${sec.toString().padStart(2, '0')}`; }
 }
 
 class FaceAnalyzer {
   constructor() { this.modelsLoaded = false; this.isAnalyzing = false; }
-
   async loadModels() {
     if (this.modelsLoaded) return;
     
-    // DETECCIÓN INTELIGENTE DE RUTA DE GITHUB PAGES
-    // Esto soluciona el problema de si la URL termina en /neurovis o /neurovis/
-    let base = window.location.pathname;
-    if (!base.endsWith('/')) {
-        base = base.substring(0, base.lastIndexOf('/') + 1);
-    }
-    const MODEL_URL = window.location.origin + base;
-    
-    console.log('[NeuroVis] Intentando cargar modelos desde:', MODEL_URL);
+    // USAMOS MODELOS REMOTOS PARA GARANTIZAR QUE SIEMPRE CARGUEN
+    const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
     
     try {
-      // Cargamos uno por uno para ver cuál falla exactamente
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
       await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
-      
       this.modelsLoaded = true;
-      console.log('[NeuroVis] ÉXITO: Modelos cargados.');
     } catch (e) {
-      console.error('Error FATAL cargando modelos:', e);
-      // Mensaje de error ultra-detallado para el usuario
-      throw new Error(`ERROR DE CARGA: No se encuentran los archivos .json en: ${MODEL_URL}. \n\nPOR FAVOR: Asegúrate de que has subido los 6 archivos de la carpeta 'models' SUELTOS en la raíz de tu repositorio de GitHub.`);
+      console.error('Error cargando modelos:', e);
+      // Intento final con ruta local por si falla el externo
+      try {
+          await faceapi.nets.tinyFaceDetector.loadFromUri('./');
+          await faceapi.nets.faceLandmark68Net.loadFromUri('./');
+          await faceapi.nets.faceExpressionNet.loadFromUri('./');
+          this.modelsLoaded = true;
+      } catch (e2) {
+          throw new Error("No se pudieron cargar los modelos de IA. Revisa tu conexión a Internet.");
+      }
     }
   }
-
   async analyzeVideo(video, duration, intervalMs = 200, onProgress = null, onFrameResult = null) {
     if (!this.modelsLoaded) await this.loadModels();
     this.isAnalyzing = true;
@@ -104,12 +96,11 @@ class FaceAnalyzer {
     const intervalSec = intervalMs / 1000;
     const totalFrames = Math.ceil(duration / intervalSec);
     const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.3 });
-
     for (let t = 0; t <= duration; t += intervalSec) {
       if (!this.isAnalyzing) break;
       await new Promise(r => {
         const seeked = () => { video.removeEventListener('seeked', seeked); requestAnimationFrame(() => requestAnimationFrame(r)); };
-        video.addEventListener('seeked', seeked);
+        video.addEventListener('seeked', seeked, { once: true });
         video.currentTime = t;
       });
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
