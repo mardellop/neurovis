@@ -9,8 +9,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
-  <script type="module" crossorigin src="./assets/index-DNyj6LxA.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-poxOFRpL.css">
+  
+  <!-- CDNs for External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- ═══════════════ HEADER ═══════════════ -->
@@ -20,10 +26,10 @@
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
           <circle cx="14" cy="14" r="12" stroke="url(#grad)" stroke-width="2.5" fill="none"/>
           <path d="M9 14c0-3 2-5 5-5s5 2 5 5" stroke="url(#grad)" stroke-width="2" stroke-linecap="round" fill="none"/>
-          <circle cx="11" cy="12" r="1.5" fill="var(--accent-cyan)"/>
-          <circle cx="17" cy="12" r="1.5" fill="var(--accent-coral)"/>
-          <path d="M11 17.5c1 1.5 5 1.5 6 0" stroke="var(--accent-emerald)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <defs><linearGradient id="grad" x1="0" y1="0" x2="28" y2="28"><stop stop-color="var(--accent-cyan)"/><stop offset="1" stop-color="var(--accent-purple)"/></linearGradient></defs>
+          <circle cx="11" cy="12" r="1.5" fill="#00d4ff"/>
+          <circle cx="17" cy="12" r="1.5" fill="#ff6b6b"/>
+          <path d="M11 17.5c1 1.5 5 1.5 6 0" stroke="#00e67a" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <defs><linearGradient id="grad" x1="0" y1="0" x2="28" y2="28"><stop stop-color="#00d4ff"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs>
         </svg>
       </div>
       <h1>NeuroVis</h1>
@@ -47,7 +53,7 @@
     <section id="upload-section" class="upload-area">
       <div class="upload-card glass-card">
         <div class="upload-icon-ring">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="1.5">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="1.5">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
@@ -193,5 +199,6 @@
     </section>
   </main>
 
+  <script src="script.js"></script>
 </body>
 </html>
