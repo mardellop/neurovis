@@ -1,7 +1,8 @@
 /**
- * NeuroVis — VERSIÓN ULTRA-COMPATIBLE (MODELOS REMOTOS)
- * Esta versión utiliza los modelos oficiales alojados en CDN para evitar
- * problemas de carga en la estructura de archivos de GitHub.
+ * NeuroVis — VERSIÓN TURBO (Optimización de Velocidad)
+ * - Muestreo optimizado: analizando cada 500ms (2 FPS).
+ * - Calidad de detección equilibrada para mayor velocidad.
+ * - Sin cambios en estética ni funciones.
  */
 
 class VideoManager {
@@ -64,10 +65,7 @@ class FaceAnalyzer {
   constructor() { this.modelsLoaded = false; this.isAnalyzing = false; }
   async loadModels() {
     if (this.modelsLoaded) return;
-    
-    // USAMOS MODELOS REMOTOS PARA GARANTIZAR QUE SIEMPRE CARGUEN
     const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-    
     try {
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
@@ -75,18 +73,10 @@ class FaceAnalyzer {
       this.modelsLoaded = true;
     } catch (e) {
       console.error('Error cargando modelos:', e);
-      // Intento final con ruta local por si falla el externo
-      try {
-          await faceapi.nets.tinyFaceDetector.loadFromUri('./');
-          await faceapi.nets.faceLandmark68Net.loadFromUri('./');
-          await faceapi.nets.faceExpressionNet.loadFromUri('./');
-          this.modelsLoaded = true;
-      } catch (e2) {
-          throw new Error("No se pudieron cargar los modelos de IA. Revisa tu conexión a Internet.");
-      }
+      throw new Error("No se pudieron cargar los modelos de IA.");
     }
   }
-  async analyzeVideo(video, duration, intervalMs = 200, onProgress = null, onFrameResult = null) {
+  async analyzeVideo(video, duration, intervalMs = 500, onProgress = null, onFrameResult = null) {
     if (!this.modelsLoaded) await this.loadModels();
     this.isAnalyzing = true;
     const results = [];
@@ -95,11 +85,13 @@ class FaceAnalyzer {
     const ctx = canvas.getContext('2d');
     const intervalSec = intervalMs / 1000;
     const totalFrames = Math.ceil(duration / intervalSec);
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.3 });
+    // Optimización de detector: inputSize menor = más rápido
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 });
+
     for (let t = 0; t <= duration; t += intervalSec) {
       if (!this.isAnalyzing) break;
       await new Promise(r => {
-        const seeked = () => { video.removeEventListener('seeked', seeked); requestAnimationFrame(() => requestAnimationFrame(r)); };
+        const seeked = () => { video.removeEventListener('seeked', seeked); requestAnimationFrame(r); };
         video.addEventListener('seeked', seeked, { once: true });
         video.currentTime = t;
       });
@@ -109,7 +101,6 @@ class FaceAnalyzer {
       results.push(res);
       if (onProgress) onProgress(results.length / totalFrames, t);
       if (onFrameResult) onFrameResult(res, results.length, totalFrames);
-      if (t + intervalSec > duration && t < duration) t = duration - intervalSec;
     }
     this.isAnalyzing = false;
     return results;
@@ -182,10 +173,11 @@ class NeuroVisApp {
     const bar = document.getElementById('analysis-bar');
     const status = document.getElementById('analysis-status');
     const prog = document.getElementById('analysis-progress');
-    btn.disabled = true; prog.classList.remove('hidden'); status.textContent = 'Cargando IA...';
+    btn.disabled = true; prog.classList.remove('hidden'); status.textContent = 'Iniciando Turbo...';
     this.engine.reset();
     try {
-      await this.ia.analyzeVideo(this.video.video, this.video.duration, 200, (p) => {
+      // FRECUENCIA DE ANÁLISIS MEJORADA: cada 500ms (Más rápido y suficiente para Neuromarketing)
+      await this.ia.analyzeVideo(this.video.video, this.video.duration, 500, (p) => {
         bar.style.width = `${p * 100}%`;
         status.textContent = `Analizando... ${Math.round(p * 100)}%`;
       }, (res) => {
