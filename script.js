@@ -1,6 +1,6 @@
 /**
- * NeuroVis — Versión SIN CARPETAS para GitHub
- * Esta versión busca los modelos directamente en la raíz para facilitar la subida manual.
+ * NeuroVis — Solución Definitiva de Rutas para GitHub Pages
+ * Este archivo detecta automáticamente si estás en un subdirectorio o en la raíz.
  */
 
 class VideoManager {
@@ -69,19 +69,28 @@ class FaceAnalyzer {
   async loadModels() {
     if (this.modelsLoaded) return;
     
-    // RUTA CAMBIADA A LA RAÍZ (./) para evitar la carpeta 'models'
-    const MODEL_URL = './'; 
+    // DETECCIÓN INTELIGENTE DE RUTA DE GITHUB PAGES
+    // Esto soluciona el problema de si la URL termina en /neurovis o /neurovis/
+    let base = window.location.pathname;
+    if (!base.endsWith('/')) {
+        base = base.substring(0, base.lastIndexOf('/') + 1);
+    }
+    const MODEL_URL = window.location.origin + base;
+    
+    console.log('[NeuroVis] Intentando cargar modelos desde:', MODEL_URL);
     
     try {
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-      ]);
+      // Cargamos uno por uno para ver cuál falla exactamente
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+      
       this.modelsLoaded = true;
+      console.log('[NeuroVis] ÉXITO: Modelos cargados.');
     } catch (e) {
-      console.error('Error cargando modelos:', e);
-      throw new Error("No se encontraron los modelos en la raíz del repositorio. Asegúrate de haber subido todos los archivos sueltos.");
+      console.error('Error FATAL cargando modelos:', e);
+      // Mensaje de error ultra-detallado para el usuario
+      throw new Error(`ERROR DE CARGA: No se encuentran los archivos .json en: ${MODEL_URL}. \n\nPOR FAVOR: Asegúrate de que has subido los 6 archivos de la carpeta 'models' SUELTOS en la raíz de tu repositorio de GitHub.`);
     }
   }
 
@@ -114,8 +123,6 @@ class FaceAnalyzer {
     this.isAnalyzing = false;
     return results;
   }
-
-  cancel() { this.isAnalyzing = false; }
 }
 
 class MetricsEngine {
@@ -149,8 +156,8 @@ class TimelineChart {
       type: 'line',
       data: { labels: [], datasets: [
         { label: 'Engagement', data: [], borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.05)', fill: true, tension: 0.4, pointRadius: 0 },
-        { label: 'Valence', data: [], borderColor: '#00e67a', backgroundColor: 'rgba(0,230,122,0.05)', fill: true, tension: 0.4, pointRadius: 0 },
-        { label: 'Arousal', data: [], borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.05)', fill: true, tension: 0.4, pointRadius: 0 }
+        { label: 'Valence', data: [], borderColor: '#00e67a', backgroundColor: 'rgba(0,230,122,0.1)', fill: true, tension: 0.4, pointRadius: 0 },
+        { label: 'Arousal', data: [], borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.1)', fill: true, tension: 0.4, pointRadius: 0 }
       ]},
       options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { min: -1, max: 1 } }, plugins: { legend: { display: false } } }
     });
@@ -184,7 +191,7 @@ class NeuroVisApp {
     const bar = document.getElementById('analysis-bar');
     const status = document.getElementById('analysis-status');
     const prog = document.getElementById('analysis-progress');
-    btn.disabled = true; prog.classList.remove('hidden'); status.textContent = 'Iniciando...';
+    btn.disabled = true; prog.classList.remove('hidden'); status.textContent = 'Cargando IA...';
     this.engine.reset();
     try {
       await this.ia.analyzeVideo(this.video.video, this.video.duration, 200, (p) => {
