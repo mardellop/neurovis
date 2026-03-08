@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuroVis — Neuromarketing Video Analysis</title>
+  <meta name="description" content="Analyze facial microexpressions in pre-recorded video for neuromarketing research. Engagement, Valence & Arousal metrics with frame-by-frame precision." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
+  <script type="module" crossorigin src="./assets/index-DNyj6LxA.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-poxOFRpL.css">
+</head>
+<body>
+  <!-- ═══════════════ HEADER ═══════════════ -->
+  <header id="app-header">
+    <div class="header-brand">
+      <div class="brand-icon">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="12" stroke="url(#grad)" stroke-width="2.5" fill="none"/>
+          <path d="M9 14c0-3 2-5 5-5s5 2 5 5" stroke="url(#grad)" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <circle cx="11" cy="12" r="1.5" fill="var(--accent-cyan)"/>
+          <circle cx="17" cy="12" r="1.5" fill="var(--accent-coral)"/>
+          <path d="M11 17.5c1 1.5 5 1.5 6 0" stroke="var(--accent-emerald)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <defs><linearGradient id="grad" x1="0" y1="0" x2="28" y2="28"><stop stop-color="var(--accent-cyan)"/><stop offset="1" stop-color="var(--accent-purple)"/></linearGradient></defs>
+        </svg>
+      </div>
+      <h1>NeuroVis</h1>
+      <span class="badge">BETA</span>
+    </div>
+    <div class="header-actions">
+      <button id="btn-new-session" class="btn btn-ghost" title="Nueva sesión">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Nueva sesión</span>
+      </button>
+      <button id="btn-export" class="btn btn-primary" disabled title="Exportar Informe">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <span>Exportar</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════ MAIN WORKSPACE ═══════════════ -->
+  <main id="app-main">
+    <!-- ── UPLOAD OVERLAY ── -->
+    <section id="upload-section" class="upload-area">
+      <div class="upload-card glass-card">
+        <div class="upload-icon-ring">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <h2>Cargar Video del Participante</h2>
+        <p>Arrastra un archivo MP4 o WebM con la grabación de la reacción facial del sujeto.</p>
+        <div class="upload-formats">
+          <span class="format-tag">MP4</span>
+          <span class="format-tag">WebM</span>
+          <span class="format-tag">&lt; 500 MB</span>
+        </div>
+        <label for="file-input" class="btn btn-primary btn-lg">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Seleccionar archivo
+        </label>
+        <input type="file" id="file-input" accept="video/mp4,video/webm" hidden />
+      </div>
+    </section>
+
+    <!-- ── ANALYSIS WORKSPACE (hidden until video loaded) ── -->
+    <section id="workspace" class="workspace hidden">
+      <div class="workspace-grid">
+        <!-- LEFT: Video + Timeline -->
+        <div class="workspace-left">
+          <!-- Video Player -->
+          <div class="panel glass-card" id="video-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><polygon points="10 8 16 12 10 16"/></svg>
+                <span>Video del Participante</span>
+              </div>
+              <span id="video-filename" class="text-muted"></span>
+            </div>
+            <div class="video-container" id="video-container">
+              <video id="video-player" preload="auto" crossorigin="anonymous"></video>
+              <canvas id="face-overlay" class="face-overlay"></canvas>
+            </div>
+            <div class="video-controls" id="video-controls">
+              <button id="btn-play" class="btn btn-icon" title="Reproducir / Pausar">
+                <svg id="icon-play" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>
+                <svg id="icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="hidden"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              </button>
+              <span id="time-current" class="time-display">0:00</span>
+              <div class="progress-track" id="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+                <div class="progress-thumb" id="progress-thumb"></div>
+              </div>
+              <span id="time-duration" class="time-display">0:00</span>
+            </div>
+          </div>
+
+          <!-- Timeline Chart -->
+          <div class="panel glass-card" id="chart-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span>Línea de Tiempo Emocional</span>
+              </div>
+              <div class="chart-legend" id="chart-legend">
+                <span class="legend-item" data-metric="engagement"><span class="dot dot-cyan"></span>Engagement</span>
+                <span class="legend-item" data-metric="valence"><span class="dot dot-emerald"></span>Valence</span>
+                <span class="legend-item" data-metric="arousal"><span class="dot dot-coral"></span>Arousal</span>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="timeline-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Sidebar -->
+        <div class="workspace-right">
+          <!-- Analyze button -->
+          <div class="panel glass-card" id="analysis-control-panel">
+            <button id="btn-analyze" class="btn btn-primary btn-block btn-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              Iniciar Análisis
+            </button>
+            <div id="analysis-progress" class="analysis-progress hidden">
+              <div class="progress-bar-container">
+                <div class="progress-bar" id="analysis-bar"></div>
+              </div>
+              <span id="analysis-status" class="text-muted">Preparando modelos...</span>
+            </div>
+          </div>
+
+          <!-- Metrics Dashboard -->
+          <div class="panel glass-card" id="metrics-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                <span>Métricas Promedio</span>
+              </div>
+            </div>
+            <div class="metrics-grid">
+              <div class="metric-card" id="metric-engagement">
+                <div class="metric-label">Engagement</div>
+                <div class="metric-value" id="val-engagement">—</div>
+                <div class="metric-bar"><div class="metric-fill fill-cyan" id="bar-engagement" style="width:0%"></div></div>
+              </div>
+              <div class="metric-card" id="metric-valence">
+                <div class="metric-label">Valence</div>
+                <div class="metric-value" id="val-valence">—</div>
+                <div class="metric-bar"><div class="metric-fill fill-emerald" id="bar-valence" style="width:0%"></div></div>
+              </div>
+              <div class="metric-card" id="metric-arousal">
+                <div class="metric-label">Arousal</div>
+                <div class="metric-value" id="val-arousal">—</div>
+                <div class="metric-bar"><div class="metric-fill fill-coral" id="bar-arousal" style="width:0%"></div></div>
+              </div>
+            </div>
+            <div class="metric-card" id="metric-dominant" style="margin-top: 0.75rem;">
+              <div class="metric-label">Emoción Dominante</div>
+              <div class="metric-value metric-value-lg" id="val-dominant">—</div>
+            </div>
+          </div>
+
+          <!-- Points of Interest -->
+          <div class="panel glass-card" id="poi-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>Puntos de Interés</span>
+              </div>
+              <button id="btn-add-poi" class="btn btn-sm btn-ghost" disabled title="Marcar punto de interés en el tiempo actual">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Añadir
+              </button>
+            </div>
+            <div id="poi-list" class="poi-list">
+              <div class="poi-empty">
+                <p class="text-muted">Los puntos de interés aparecerán aquí tras el análisis.</p>
+              </div>
+            </div>
+            <button id="btn-auto-detect" class="btn btn-sm btn-outline btn-block" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              Auto-detectar cambios bruscos
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+</body>
+</html>
