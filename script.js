@@ -239,7 +239,7 @@ class NeuroVisApp {
       // 1. Encabezado Premium
       doc.setFillColor(10, 14, 26); doc.rect(0, 0, pageWidth, 40, 'F');
       doc.setTextColor(0, 212, 255); doc.setFontSize(24); doc.setFont('helvetica', 'bold');
-      doc.text('NeuroVis — Informe Neuromarketing', margin, 25);
+      doc.text('Informe de NeuroVis', margin, 25);
       
       // Fecha
       doc.setTextColor(139, 146, 168); doc.setFontSize(10);
@@ -248,7 +248,7 @@ class NeuroVisApp {
       y = 55;
       
       // 2. Métricas Promedio
-      doc.setTextColor(0, 0, 0); doc.setFontSize(16); doc.text('Resultados del Análisis Biométrico', margin, y);
+      doc.setTextColor(0, 0, 0); doc.setFontSize(16); doc.text('Resultados del análisis biométrico', margin, y);
       y += 12;
       
       const avg = this.engine.averages;
@@ -257,7 +257,7 @@ class NeuroVisApp {
       
       let bx = margin + 10;
       doc.setFontSize(10); doc.setTextColor(80, 80, 80);
-      doc.text('Engagement', bx, y + 10); doc.text('Valence', bx + 60, y + 10); doc.text('Arousal', bx + 120, y + 10);
+      doc.text('Engagement', bx, y + 10); doc.text('Valencia', bx + 60, y + 10); doc.text('Arousal', bx + 120, y + 10);
       
       doc.setFontSize(15); doc.setTextColor(10, 10, 10);
       doc.text(`${(avg.engagement * 100).toFixed(1)}%`, bx, y + 20);
@@ -265,12 +265,12 @@ class NeuroVisApp {
       doc.text(`${(avg.arousal * 100).toFixed(1)}%`, bx + 120, y + 20);
       
       const labels = { happy: 'Feliz', sad: 'Triste', angry: 'Enojado', surprised: 'Sorpresa', fearful: 'Miedo', disgusted: 'Disgusto', neutral: 'Neutral' };
-      doc.setFontSize(11); doc.text(`Emoción Dominante: ${labels[avg.dominant] || 'Neutral'}`, bx, y + 28);
+      doc.setFontSize(11); doc.text(`Emoción dominante: ${labels[avg.dominant] || 'Neutral'}`, bx, y + 28);
       
       y += 50;
 
       // 3. Capturas de Pantalla (Evidencia Visual)
-      doc.setFontSize(15); doc.text('Evidencia Visual', margin, y);
+      doc.setFontSize(15); doc.text('Evidencia visual', margin, y);
       y += 8;
       
       const vCap = await this._capture();
@@ -284,7 +284,7 @@ class NeuroVisApp {
       y += imgH + 20;
 
       // 4. Implicaciones de Venta
-      doc.setFontSize(16); doc.setTextColor(0, 0, 0); doc.text('Implicaciones para el Producto', margin, y);
+      doc.setFontSize(16); doc.setTextColor(0, 0, 0); doc.text('Implicaciones para tu producto', margin, y);
       y += 10;
       doc.setFontSize(10); doc.setFont('helvetica', 'normal');
       
@@ -304,18 +304,18 @@ class NeuroVisApp {
 
   _calculateImplications(avg) {
     let m = "";
-    if (avg.engagement > 0.6) m += "• ALTO COMPROMISO: El usuario está cautivado por el estímulo visual. Es el momento perfecto para mostrar el logo o el botón de compra.\n\n";
-    else m += "• ATENCIÓN BAJA: El contenido actual no engancha. Se recomienda usar más contraste o un inicio más impactante.\n\n";
+    if (avg.engagement > 0.6) m += "ALTO COMPROMISO: El usuario está cautivado por el estímulo visual. Probablemente quiera comprar el producto.\n\n";
+    else m += "ATENCIÓN BAJA: El contenido actual no engancha. Se recomienda usar más contraste o un inicio más impactante.\n\n";
     
-    if (avg.valence > 0.1) m += "• VALENCIA POSITIVA: El producto genera agrado. La predisposición a la compra es alta porque se asocia con algo placentero.\n\n";
-    else if (avg.valence < -0.1) m += "• VALENCIA NEGATIVA: Hay rechazo. El video podría estar comunicando un mensaje que asusta o genera desconfianza.\n\n";
-    else m += "• NEUTRALIDAD: El usuario no siente nada especial. El video es informativo pero no 'enamora'.\n\n";
+    if (avg.valence > 0.1) m += "VALENCIA POSITIVA: El producto genera agrado. La predisposición a la compra es alta porque se asocia con algo placentero.\n\n";
+    else if (avg.valence < -0.1) m += "VALENCIA NEGATIVA: Hay rechazo. Puede estar comunicando un mensaje que asusta o genera desconfianza.\n\n";
+    else m += "NEUTRALIDAD: El usuario no siente nada especial. El vídeo es informativo pero no 'enamora'.\n\n";
     
-    if (avg.arousal > 0.5) m += "• ALTA ENERGÍA: El sujeto está alerta. Combinado con felicidad, es el estado ideal para cerrar una venta emocional.\n\n";
+    if (avg.arousal > 0.5) m += "ALTA ENERGÍA: El sujeto está alerta. Combinado con felicidad, es el estado ideal para cerrar una venta emocional.\n\n";
     
     m += "CONCLUSIÓN ESTRATÉGICA: ";
     if (avg.valence > 0 && avg.engagement > 0.5) return m + "El contenido está optimizado para la conversión directa.";
-    return m + "Se recomienda ajustar el gancho emocional para mejorar el retorno de inversión.";
+    return m + "Se recomienda ajustar el gancho emocional para mejorar el retorno de la inversión.";
   }
 
   async _capture() {
