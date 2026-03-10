@@ -91,6 +91,13 @@ body {
     radial-gradient(ellipse 60% 50% at 80% 100%, rgba(168,85,247,0.03) 0%, transparent 60%);
 }
 
+img.NeuroVis-Logo {
+    width: 80px;      /* Ajusta este valor a tu gusto (ej: 60px, 100px) */
+    height: auto;     /* Mantiene la proporción original para que no se deforme */
+    display: block;   /* Evita espacios extra debajo de la imagen */
+    margin: 10px;     /* Opcional: añade un poco de aire alrededor */
+}
+
 /* ── Utility ── */
 .hidden { display: none !important; }
 .text-muted { color: var(--text-muted); font-size: 0.85rem; }
