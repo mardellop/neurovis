@@ -92,7 +92,7 @@ body {
 }
 
 img.NeuroVis-Logo {
-    width: 80px;      /* Ajusta este valor a tu gusto (ej: 60px, 100px) */
+    width: 30px;      /* Ajusta este valor a tu gusto (ej: 60px, 100px) */
     height: auto;     /* Mantiene la proporción original para que no se deforme */
     display: block;   /* Evita espacios extra debajo de la imagen */
     margin: 10px;     /* Opcional: añade un poco de aire alrededor */
