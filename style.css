@@ -133,6 +133,13 @@ img.NeuroVis.Logo.png {
   z-index: 100;
 }
 
+#app-header .brand-icon img {
+    width: 60px !important;
+    height: auto !important;
+    min-width: 0 !important;
+    max-width: 80px !important;
+}
+
 .header-brand {
   display: flex;
   align-items: center;
